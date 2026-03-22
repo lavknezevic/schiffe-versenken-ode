@@ -1,0 +1,87 @@
+.root {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-background-color: #2c3e50;
+}
+
+.label {
+    -fx-text-fill: #ecf0f1;
+}
+
+.status-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ecf0f1;
+}
+
+.stats-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #bdc3c7;
+}
+
+.board-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #ecf0f1;
+    -fx-font-size: 14px;
+}
+
+.button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-cursor: hand;
+    -fx-background-radius: 4;
+}
+
+.button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.button:disabled {
+    -fx-background-color: #7f8c8d;
+    -fx-text-fill: #bdc3c7;
+    -fx-cursor: default;
+}
+
+.cell {
+    -fx-min-width: 35;
+    -fx-min-height: 35;
+    -fx-max-width: 35;
+    -fx-max-height: 35;
+    -fx-border-color: #2c3e50;
+    -fx-border-width: 1;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-cursor: hand;
+}
+
+.cell-empty {
+    -fx-background-color: #4a90d9;
+}
+
+.cell-ship {
+    -fx-background-color: #7f8c8d;
+}
+
+.cell-hit {
+    -fx-background-color: #e74c3c;
+}
+
+.cell-miss {
+    -fx-background-color: #ecf0f1;
+}
+
+.cell-sunk {
+    -fx-background-color: #8b0000;
+}
+
+.log-area {
+    -fx-control-inner-background: #34495e;
+    -fx-text-fill: #ecf0f1;
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 12px;
+}
+
+.grid-header {
+    -fx-text-fill: #ecf0f1;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+}
