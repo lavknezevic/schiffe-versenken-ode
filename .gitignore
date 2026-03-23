@@ -37,3 +37,11 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Game files ###
+config.properties
+stats.csv
+
+### IDE ###
+.idea/
+.claude/
