@@ -15,6 +15,7 @@ public class GameServer {
     private PrintWriter out;
     private Consumer<String> onMessageReceived;
     private Consumer<String> onError;
+    private Runnable onDisconnected;
     private volatile boolean running;
 
     public GameServer(int port) {
@@ -28,6 +29,10 @@ public class GameServer {
 
     public void setOnError(Consumer<String> handler) {
         this.onError = handler;
+    }
+
+    public void setOnDisconnected(Runnable handler) {
+        this.onDisconnected = handler;
     }
 
     public void start() {
@@ -45,6 +50,9 @@ public class GameServer {
                     if (onMessageReceived != null) {
                         onMessageReceived.accept(message);
                     }
+                }
+                if (running && onDisconnected != null) {
+                    onDisconnected.run();
                 }
             } catch (BindException e) {
                 if (running && onError != null) {

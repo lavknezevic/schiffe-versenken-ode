@@ -240,13 +240,13 @@ public class GameController {
         server = new GameServer(config.getPort());
         server.setOnMessageReceived(msg -> Platform.runLater(() -> handleMessage(msg)));
         server.setOnError(err -> Platform.runLater(() -> {
-            log("Verbindungsfehler: " + err);
-            updateStatus("Verbindungsfehler: " + err);
-            hostButton.setDisable(false);
-            joinButton.setDisable(false);
-            nameField.setDisable(false);
-            gameState = GameState.START;
+            handleDisconnect();
+            if (gameState == GameState.START) {
+                log("Verbindungsfehler: " + err);
+                updateStatus("Verbindungsfehler: " + err);
+            }
         }));
+        server.setOnDisconnected(() -> Platform.runLater(this::handleDisconnect));
         server.start();
         log("Server gestartet auf Port " + config.getPort());
     }
@@ -262,14 +262,14 @@ public class GameController {
         client = new GameClient(config.getHost(), config.getPort());
         client.setOnMessageReceived(msg -> Platform.runLater(() -> handleMessage(msg)));
         client.setOnError(err -> Platform.runLater(() -> {
-            log("Verbindungsfehler: " + err);
-            updateStatus("Verbindungsfehler: " + err);
-            hostButton.setDisable(false);
-            joinButton.setDisable(false);
-            nameField.setDisable(false);
-            gameState = GameState.START;
+            handleDisconnect();
+            if (gameState == GameState.START) {
+                log("Verbindungsfehler: " + err);
+                updateStatus("Verbindungsfehler: " + err);
+            }
         }));
         client.setOnConnected(() -> Platform.runLater(() -> sendMessage("CONNECT:" + playerName)));
+        client.setOnDisconnected(() -> Platform.runLater(this::handleDisconnect));
         client.connect();
         log("Verbinde zu " + config.getHost() + ":" + config.getPort());
     }
@@ -608,6 +608,26 @@ public class GameController {
         log("--- Neues Spiel ---");
         log("Platziere: " + shipsToPlace[0].getName() +
                 " (" + shipsToPlace[0].getLength() + " Felder) - Rechtsklick zum Drehen");
+    }
+
+    private void handleDisconnect() {
+        if (gameState == GameState.GAME_OVER) {
+            return;
+        }
+        boolean midGame = gameState == GameState.MY_TURN || gameState == GameState.ENEMY_TURN;
+
+        if (midGame) {
+            stats.recordDraw(playerName);
+            log("Verbindung zum Gegner verloren - Unentschieden!");
+            updateStatus("Verbindung verloren - Unentschieden.");
+            updateStatsDisplay();
+        }
+
+        gameState = GameState.START;
+        restartButton.setDisable(true);
+        hostButton.setDisable(false);
+        joinButton.setDisable(false);
+        nameField.setDisable(false);
     }
 
     private void refreshMyGrid() {

@@ -16,6 +16,7 @@ public class GameClient {
     private Consumer<String> onMessageReceived;
     private Consumer<String> onError;
     private Runnable onConnected;
+    private Runnable onDisconnected;
     private volatile boolean running;
 
     public GameClient(String host, int port) {
@@ -36,6 +37,10 @@ public class GameClient {
         this.onConnected = handler;
     }
 
+    public void setOnDisconnected(Runnable handler) {
+        this.onDisconnected = handler;
+    }
+
     public void connect() {
         running = true;
         Thread clientThread = new Thread(() -> {
@@ -53,6 +58,9 @@ public class GameClient {
                     if (onMessageReceived != null) {
                         onMessageReceived.accept(message);
                     }
+                }
+                if (running && onDisconnected != null) {
+                    onDisconnected.run();
                 }
             } catch (UnknownHostException e) {
                 if (running && onError != null) {

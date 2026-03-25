@@ -71,7 +71,6 @@ public class Board {
                 hitShip.hit();
                 return new ShotResult(true, hitShip.isSunk(), hitShip.getName());
             }
-            return new ShotResult(true, false, null);
         }
         grid[row][col] = CellState.MISS;
         return new ShotResult(false, false, null);
@@ -113,7 +112,6 @@ public class Board {
                         placeShip(ship, row, col, horizontal);
                         placed = true;
                     } catch (InvalidPlacementException e) {
-                        // Sollte nicht auftreten, da canPlace vorher prueft
                     }
                 }
             }
