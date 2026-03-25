@@ -1,5 +1,7 @@
 package at.newsfx.fhtechnikum.schiffe_versenken_ode.model;
 
+import at.newsfx.fhtechnikum.schiffe_versenken_ode.exception.InvalidPlacementException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -21,9 +23,16 @@ public class Board {
         }
     }
 
-    public boolean placeShip(Ship ship, int row, int col, boolean horizontal) {
+    public void placeShip(Ship ship, int row, int col, boolean horizontal) throws InvalidPlacementException {
+        if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+            throw new InvalidPlacementException(
+                    ship.getName() + " kann nicht bei " + (char) ('A' + row) + col
+                            + " platziert werden: Position ausserhalb des Spielfelds.");
+        }
         if (!canPlace(ship, row, col, horizontal)) {
-            return false;
+            throw new InvalidPlacementException(
+                    ship.getName() + " kann nicht bei " + (char) ('A' + row) + col
+                            + " platziert werden: Feld belegt oder Schiff ragt ueber den Rand.");
         }
         ship.setPosition(row, col, horizontal);
         for (int i = 0; i < ship.getLength(); i++) {
@@ -32,7 +41,6 @@ public class Board {
             grid[r][c] = CellState.SHIP;
         }
         ships.add(ship);
-        return true;
     }
 
     public boolean canPlace(Ship ship, int row, int col, boolean horizontal) {
@@ -100,7 +108,14 @@ public class Board {
                 int row = random.nextInt(SIZE);
                 int col = random.nextInt(SIZE);
                 boolean horizontal = random.nextBoolean();
-                placed = placeShip(ship, row, col, horizontal);
+                if (canPlace(ship, row, col, horizontal)) {
+                    try {
+                        placeShip(ship, row, col, horizontal);
+                        placed = true;
+                    } catch (InvalidPlacementException e) {
+                        // Sollte nicht auftreten, da canPlace vorher prueft
+                    }
+                }
             }
         }
     }

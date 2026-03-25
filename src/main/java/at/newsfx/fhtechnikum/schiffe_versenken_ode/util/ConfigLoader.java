@@ -2,6 +2,8 @@ package at.newsfx.fhtechnikum.schiffe_versenken_ode.util;
 
 import java.io.*;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ConfigLoader {
 
@@ -9,6 +11,8 @@ public class ConfigLoader {
     private static final String DEFAULT_HOST = "localhost";
     private static final int DEFAULT_PORT = 5000;
     private static final String DEFAULT_PLAYER_NAME = "Player";
+
+    private static final Logger LOGGER = Logger.getLogger(ConfigLoader.class.getName());
 
     private final Properties properties;
 
@@ -33,8 +37,10 @@ public class ConfigLoader {
         }
         try (FileReader reader = new FileReader(filePath)) {
             properties.load(reader);
+        } catch (FileNotFoundException e) {
+            LOGGER.log(Level.WARNING, "Konfigurationsdatei nicht gefunden: {0}", filePath);
         } catch (IOException e) {
-            System.err.println("Failed to load config: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Fehler beim Laden der Konfiguration: {0}", e.getMessage());
         }
     }
 
@@ -46,7 +52,7 @@ public class ConfigLoader {
             defaults.setProperty("playerName", DEFAULT_PLAYER_NAME);
             defaults.store(writer, "Schiffe Versenken Configuration");
         } catch (IOException e) {
-            System.err.println("Failed to create default config: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Fehler beim Erstellen der Standardkonfiguration: {0}", e.getMessage());
         }
     }
 

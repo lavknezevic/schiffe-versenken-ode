@@ -3,10 +3,13 @@ package at.newsfx.fhtechnikum.schiffe_versenken_ode.model;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GameStats {
 
     private static final String STATS_FILE = "stats.csv";
+    private static final Logger LOGGER = Logger.getLogger(GameStats.class.getName());
 
     private final Map<String, int[]> playerStats;
 
@@ -97,8 +100,12 @@ public class GameStats {
                     playerStats.put(name, new int[]{wins, losses, draws});
                 }
             }
-        } catch (IOException | NumberFormatException e) {
-            System.err.println("Failed to load stats: " + e.getMessage());
+        } catch (FileNotFoundException e) {
+            LOGGER.log(Level.WARNING, "Statistikdatei nicht gefunden: {0}", STATS_FILE);
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Ungueltige Zahl in Statistikdatei: {0}", e.getMessage());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Fehler beim Laden der Statistiken: {0}", e.getMessage());
         }
     }
 
@@ -110,7 +117,7 @@ public class GameStats {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Failed to save stats: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Fehler beim Speichern der Statistiken: {0}", e.getMessage());
         }
     }
 }

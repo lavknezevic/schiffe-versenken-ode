@@ -1,7 +1,9 @@
 package at.newsfx.fhtechnikum.schiffe_versenken_ode.network;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.function.Consumer;
 
 public class GameClient {
@@ -52,9 +54,17 @@ public class GameClient {
                         onMessageReceived.accept(message);
                     }
                 }
+            } catch (UnknownHostException e) {
+                if (running && onError != null) {
+                    onError.accept("Unbekannter Host: " + host);
+                }
+            } catch (ConnectException e) {
+                if (running && onError != null) {
+                    onError.accept("Verbindung zu " + host + ":" + port + " abgelehnt.");
+                }
             } catch (IOException e) {
                 if (running && onError != null) {
-                    onError.accept(e.getMessage());
+                    onError.accept("Verbindungsfehler: " + e.getMessage());
                 }
             }
         });

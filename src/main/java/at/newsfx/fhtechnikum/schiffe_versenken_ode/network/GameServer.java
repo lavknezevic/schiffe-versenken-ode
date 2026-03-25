@@ -1,6 +1,7 @@
 package at.newsfx.fhtechnikum.schiffe_versenken_ode.network;
 
 import java.io.*;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.function.Consumer;
@@ -45,9 +46,13 @@ public class GameServer {
                         onMessageReceived.accept(message);
                     }
                 }
+            } catch (BindException e) {
+                if (running && onError != null) {
+                    onError.accept("Port " + port + " bereits belegt: " + e.getMessage());
+                }
             } catch (IOException e) {
                 if (running && onError != null) {
-                    onError.accept(e.getMessage());
+                    onError.accept("Serverfehler: " + e.getMessage());
                 }
             }
         });

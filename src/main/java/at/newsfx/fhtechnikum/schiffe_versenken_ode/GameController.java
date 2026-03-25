@@ -1,5 +1,7 @@
 package at.newsfx.fhtechnikum.schiffe_versenken_ode;
 
+import at.newsfx.fhtechnikum.schiffe_versenken_ode.exception.InvalidMessageException;
+import at.newsfx.fhtechnikum.schiffe_versenken_ode.exception.InvalidPlacementException;
 import at.newsfx.fhtechnikum.schiffe_versenken_ode.model.*;
 import at.newsfx.fhtechnikum.schiffe_versenken_ode.network.GameClient;
 import at.newsfx.fhtechnikum.schiffe_versenken_ode.network.GameServer;
@@ -347,9 +349,10 @@ public class GameController {
             return;
         }
         currentShipToPlace = shipsToPlace[shipPlacementIndex];
-        if (myBoard.placeShip(currentShipToPlace, row, col, placingHorizontal)) {
+        try {
+            myBoard.placeShip(currentShipToPlace, row, col, placingHorizontal);
             refreshMyGrid();
-            log(currentShipToPlace.getName() + " platziert bei " + (char)('A' + row) + col);
+            log(currentShipToPlace.getName() + " platziert bei " + (char) ('A' + row) + col);
             shipPlacementIndex++;
             if (shipPlacementIndex < shipsToPlace.length) {
                 log("Platziere: " + shipsToPlace[shipPlacementIndex].getName() +
@@ -360,8 +363,8 @@ public class GameController {
                     readyButton.setDisable(false);
                 }
             }
-        } else {
-            log("Kann " + currentShipToPlace.getName() + " dort nicht platzieren!");
+        } catch (InvalidPlacementException e) {
+            log(e.getMessage());
         }
     }
 
@@ -444,11 +447,28 @@ public class GameController {
         log("Spiel gestartet!");
     }
 
+    private int[] parseCoordinates(String coordString) throws InvalidMessageException {
+        String[] parts = coordString.split(",");
+        if (parts.length < 2) {
+            throw new InvalidMessageException("Koordinaten unvollstaendig: " + coordString);
+        }
+        try {
+            int row = Integer.parseInt(parts[0].trim());
+            int col = Integer.parseInt(parts[1].trim());
+            return new int[]{row, col};
+        } catch (NumberFormatException e) {
+            throw new InvalidMessageException("Ungueltige Koordinaten: " + coordString);
+        }
+    }
+
     private void handleIncomingShot(String message) {
         try {
-            String[] parts = message.substring(6).split(",");
-            int row = Integer.parseInt(parts[0]);
-            int col = Integer.parseInt(parts[1]);
+            if (!message.startsWith("SHOOT:") || message.length() <= 6) {
+                throw new InvalidMessageException("Ungueltiges SHOOT-Format: " + message);
+            }
+            int[] coords = parseCoordinates(message.substring(6));
+            int row = coords[0];
+            int col = coords[1];
 
             ShotResult result = myBoard.shootAt(row, col);
             refreshMyGrid();
@@ -481,8 +501,12 @@ public class GameController {
                 gameState = GameState.MY_TURN;
                 updateStatus("Du bist am Zug!");
             }
-        } catch (Exception e) {
-            log("Fehler beim Verarbeiten des Schusses: " + e.getMessage());
+        } catch (InvalidMessageException e) {
+            log("Ungueltige Nachricht: " + e.getMessage());
+            gameState = GameState.MY_TURN;
+            updateStatus("Du bist am Zug!");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            log("Fehler: Koordinaten ausserhalb des Spielfelds.");
             gameState = GameState.MY_TURN;
             updateStatus("Du bist am Zug!");
         }
@@ -492,9 +516,12 @@ public class GameController {
         try {
             String payload = message.substring(7);
             String[] parts = payload.split(":");
-            String[] coords = parts[0].split(",");
-            int row = Integer.parseInt(coords[0]);
-            int col = Integer.parseInt(coords[1]);
+            if (parts.length < 2) {
+                throw new InvalidMessageException("RESULT-Nachricht unvollstaendig: " + message);
+            }
+            int[] coords = parseCoordinates(parts[0]);
+            int row = coords[0];
+            int col = coords[1];
             String result = parts[1];
 
             if (result.equals("HIT")) {
@@ -525,8 +552,16 @@ public class GameController {
                 setCellClass(enemyGridButtons[row][col], CLASS_MISS);
                 log("Daneben bei " + (char) ('A' + row) + col + ".");
             }
-        } catch (Exception e) {
-            log("Fehler beim Verarbeiten des Ergebnisses: " + e.getMessage());
+        } catch (InvalidMessageException e) {
+            log("Ungueltige Nachricht: " + e.getMessage());
+            gameState = GameState.MY_TURN;
+            updateStatus("Du bist am Zug!");
+        } catch (NumberFormatException e) {
+            log("Fehler beim Parsen der Schiffsdaten: " + e.getMessage());
+            gameState = GameState.MY_TURN;
+            updateStatus("Du bist am Zug!");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            log("Fehler: Koordinaten ausserhalb des Spielfelds.");
             gameState = GameState.MY_TURN;
             updateStatus("Du bist am Zug!");
         }
