@@ -16,18 +16,21 @@ public class GameStats {
     }
 
     public void recordWin(String playerName) {
+        load();
         int[] stats = getOrCreate(playerName);
         stats[0]++;
         save();
     }
 
     public void recordLoss(String playerName) {
+        load();
         int[] stats = getOrCreate(playerName);
         stats[1]++;
         save();
     }
 
     public void recordDraw(String playerName) {
+        load();
         int[] stats = getOrCreate(playerName);
         stats[2]++;
         save();

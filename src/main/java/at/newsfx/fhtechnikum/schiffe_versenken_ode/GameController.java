@@ -50,6 +50,7 @@ public class GameController {
 
     private String playerName;
     private String opponentName;
+    private boolean restartRequested;
 
     public GameController() {
         myBoard = new Board();
@@ -266,18 +267,9 @@ public class GameController {
             nameField.setDisable(false);
             gameState = GameState.START;
         }));
+        client.setOnConnected(() -> Platform.runLater(() -> sendMessage("CONNECT:" + playerName)));
         client.connect();
         log("Verbinde zu " + config.getHost() + ":" + config.getPort());
-
-        Thread connectNotify = new Thread(() -> {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ignored) {
-            }
-            Platform.runLater(() -> sendMessage("CONNECT:" + playerName));
-        });
-        connectNotify.setDaemon(true);
-        connectNotify.start();
     }
 
     private void randomPlacement() {
@@ -421,17 +413,20 @@ public class GameController {
         } else if (message.equals("GAMEOVER:LOSE")) {
             gameState = GameState.GAME_OVER;
             stats.recordWin(playerName);
-            if (opponentName != null) {
-                stats.recordLoss(opponentName);
-            }
             updateStatus("Du hast gewonnen!");
             log("Alle gegnerischen Schiffe versenkt! Sieg!");
             updateStatsDisplay();
             restartButton.setDisable(false);
         } else if (message.equals("RESTART_REQUEST")) {
-            log(opponentName + " möchte ein Rematch!");
-            updateStatus(opponentName + " möchte ein Rematch!");
-            acceptRestartButton.setVisible(true);
+            if (restartRequested) {
+                sendMessage("RESTART_ACCEPT");
+                log("Beide wollen Rematch!");
+                performRestart();
+            } else {
+                log(opponentName + " möchte ein Rematch!");
+                updateStatus(opponentName + " möchte ein Rematch!");
+                acceptRestartButton.setVisible(true);
+            }
         } else if (message.equals("RESTART_ACCEPT")) {
             log(opponentName + " hat das Rematch angenommen!");
             performRestart();
@@ -450,68 +445,95 @@ public class GameController {
     }
 
     private void handleIncomingShot(String message) {
-        String[] parts = message.substring(6).split(",");
-        int row = Integer.parseInt(parts[0]);
-        int col = Integer.parseInt(parts[1]);
+        try {
+            String[] parts = message.substring(6).split(",");
+            int row = Integer.parseInt(parts[0]);
+            int col = Integer.parseInt(parts[1]);
 
-        ShotResult result = myBoard.shootAt(row, col);
-        refreshMyGrid();
+            ShotResult result = myBoard.shootAt(row, col);
+            refreshMyGrid();
 
-        String response = "RESULT:" + row + "," + col + ":";
-        if (result.isSunk()) {
-            response += "SUNK:" + result.getShipName();
-            log(opponentName + " hat " + result.getShipName() + " versenkt bei " + (char)('A' + row) + col + "!");
-        } else if (result.isHit()) {
-            response += "HIT";
-            log(opponentName + " hat getroffen bei " + (char)('A' + row) + col + "!");
-        } else {
-            response += "MISS";
-            log(opponentName + " daneben bei " + (char)('A' + row) + col + ".");
-        }
-        sendMessage(response);
-
-        if (myBoard.allShipsSunk()) {
-            gameState = GameState.GAME_OVER;
-            sendMessage("GAMEOVER:LOSE");
-            stats.recordLoss(playerName);
-            if (opponentName != null) {
-                stats.recordWin(opponentName);
+            String response = "RESULT:" + row + "," + col + ":";
+            if (result.isSunk()) {
+                Ship sunkShip = myBoard.getShipAt(row, col);
+                response += "SUNK:" + result.getShipName()
+                        + ":" + sunkShip.getStartRow() + "," + sunkShip.getStartCol()
+                        + "," + (sunkShip.isHorizontal() ? "H" : "V") + "," + sunkShip.getLength();
+                log(opponentName + " hat " + result.getShipName() + " versenkt bei " + (char) ('A' + row) + col + "!");
+            } else if (result.isHit()) {
+                response += "HIT";
+                log(opponentName + " hat getroffen bei " + (char) ('A' + row) + col + "!");
+            } else {
+                response += "MISS";
+                log(opponentName + " daneben bei " + (char) ('A' + row) + col + ".");
             }
-            updateStatus("Alle Schiffe versenkt. Du hast verloren!");
-            log("Alle deine Schiffe wurden versenkt. Niederlage!");
-            updateStatsDisplay();
-            restartButton.setDisable(false);
-        } else {
+            sendMessage(response);
+
+            if (myBoard.allShipsSunk()) {
+                gameState = GameState.GAME_OVER;
+                sendMessage("GAMEOVER:LOSE");
+                stats.recordLoss(playerName);
+                updateStatus("Alle Schiffe versenkt. Du hast verloren!");
+                log("Alle deine Schiffe wurden versenkt. Niederlage!");
+                updateStatsDisplay();
+                restartButton.setDisable(false);
+            } else {
+                gameState = GameState.MY_TURN;
+                updateStatus("Du bist am Zug!");
+            }
+        } catch (Exception e) {
+            log("Fehler beim Verarbeiten des Schusses: " + e.getMessage());
             gameState = GameState.MY_TURN;
             updateStatus("Du bist am Zug!");
         }
     }
 
     private void handleShotResult(String message) {
-        String payload = message.substring(7);
-        String[] parts = payload.split(":");
-        String[] coords = parts[0].split(",");
-        int row = Integer.parseInt(coords[0]);
-        int col = Integer.parseInt(coords[1]);
-        String result = parts[1];
+        try {
+            String payload = message.substring(7);
+            String[] parts = payload.split(":");
+            String[] coords = parts[0].split(",");
+            int row = Integer.parseInt(coords[0]);
+            int col = Integer.parseInt(coords[1]);
+            String result = parts[1];
 
-        if (result.equals("HIT")) {
-            enemyView[row][col] = CellState.HIT;
-            setCellClass(enemyGridButtons[row][col], CLASS_HIT);
-            log("Treffer bei " + (char)('A' + row) + col + "!");
-        } else if (result.equals("SUNK")) {
-            enemyView[row][col] = CellState.HIT;
-            setCellClass(enemyGridButtons[row][col], CLASS_SUNK);
-            String shipName = parts.length > 2 ? parts[2] : "Schiff";
-            log(shipName + " versenkt bei " + (char)('A' + row) + col + "!");
-        } else {
-            enemyView[row][col] = CellState.MISS;
-            setCellClass(enemyGridButtons[row][col], CLASS_MISS);
-            log("Daneben bei " + (char)('A' + row) + col + ".");
+            if (result.equals("HIT")) {
+                enemyView[row][col] = CellState.HIT;
+                setCellClass(enemyGridButtons[row][col], CLASS_HIT);
+                log("Treffer bei " + (char) ('A' + row) + col + "!");
+            } else if (result.equals("SUNK")) {
+                String shipName = parts.length > 2 ? parts[2] : "Schiff";
+                if (parts.length > 3) {
+                    String[] shipInfo = parts[3].split(",");
+                    int sr = Integer.parseInt(shipInfo[0]);
+                    int sc = Integer.parseInt(shipInfo[1]);
+                    boolean horiz = shipInfo[2].equals("H");
+                    int len = Integer.parseInt(shipInfo[3]);
+                    for (int i = 0; i < len; i++) {
+                        int cr = horiz ? sr : sr + i;
+                        int cc = horiz ? sc + i : sc;
+                        enemyView[cr][cc] = CellState.HIT;
+                        setCellClass(enemyGridButtons[cr][cc], CLASS_SUNK);
+                    }
+                } else {
+                    enemyView[row][col] = CellState.HIT;
+                    setCellClass(enemyGridButtons[row][col], CLASS_SUNK);
+                }
+                log(shipName + " versenkt bei " + (char) ('A' + row) + col + "!");
+            } else {
+                enemyView[row][col] = CellState.MISS;
+                setCellClass(enemyGridButtons[row][col], CLASS_MISS);
+                log("Daneben bei " + (char) ('A' + row) + col + ".");
+            }
+        } catch (Exception e) {
+            log("Fehler beim Verarbeiten des Ergebnisses: " + e.getMessage());
+            gameState = GameState.MY_TURN;
+            updateStatus("Du bist am Zug!");
         }
     }
 
     private void requestRestart() {
+        restartRequested = true;
         sendMessage("RESTART_REQUEST");
         restartButton.setDisable(true);
         updateStatus("Rematch angefragt, warte auf " + opponentName + "...");
@@ -525,6 +547,7 @@ public class GameController {
     }
 
     private void performRestart() {
+        restartRequested = false;
         myBoard.clear();
         for (int r = 0; r < Board.SIZE; r++) {
             for (int c = 0; c < Board.SIZE; c++) {
@@ -559,7 +582,8 @@ public class GameController {
                 switch (state) {
                     case EMPTY -> setCellClass(myGridButtons[r][c], CLASS_EMPTY);
                     case SHIP -> setCellClass(myGridButtons[r][c], CLASS_SHIP);
-                    case HIT -> setCellClass(myGridButtons[r][c], CLASS_HIT);
+                    case HIT -> setCellClass(myGridButtons[r][c],
+                            myBoard.isShipSunkAt(r, c) ? CLASS_SUNK : CLASS_HIT);
                     case MISS -> setCellClass(myGridButtons[r][c], CLASS_MISS);
                 }
             }

@@ -69,7 +69,7 @@ public class Board {
         return new ShotResult(false, false, null);
     }
 
-    private Ship getShipAt(int row, int col) {
+    public Ship getShipAt(int row, int col) {
         for (Ship ship : ships) {
             if (ship.occupies(row, col)) {
                 return ship;
@@ -116,6 +116,11 @@ public class Board {
 
     public CellState getCell(int row, int col) {
         return grid[row][col];
+    }
+
+    public boolean isShipSunkAt(int row, int col) {
+        Ship ship = getShipAt(row, col);
+        return ship != null && ship.isSunk();
     }
 
     public List<Ship> getShips() {

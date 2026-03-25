@@ -35,6 +35,7 @@ public class GameServer {
             try {
                 serverSocket = new ServerSocket(port);
                 clientSocket = serverSocket.accept();
+                serverSocket.close();
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
 

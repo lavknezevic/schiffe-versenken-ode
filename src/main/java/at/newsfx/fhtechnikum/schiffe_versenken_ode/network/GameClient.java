@@ -13,6 +13,7 @@ public class GameClient {
     private PrintWriter out;
     private Consumer<String> onMessageReceived;
     private Consumer<String> onError;
+    private Runnable onConnected;
     private volatile boolean running;
 
     public GameClient(String host, int port) {
@@ -29,6 +30,10 @@ public class GameClient {
         this.onError = handler;
     }
 
+    public void setOnConnected(Runnable handler) {
+        this.onConnected = handler;
+    }
+
     public void connect() {
         running = true;
         Thread clientThread = new Thread(() -> {
@@ -36,6 +41,10 @@ public class GameClient {
                 socket = new Socket(host, port);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+
+                if (onConnected != null) {
+                    onConnected.run();
+                }
 
                 String message;
                 while (running && (message = in.readLine()) != null) {
