@@ -50,7 +50,6 @@ public class GameController {
 
     private String playerName;
     private String opponentName;
-    private boolean myTurn;
 
     public GameController() {
         myBoard = new Board();
@@ -438,11 +437,9 @@ public class GameController {
 
     private void startGame() {
         if (isHost) {
-            myTurn = true;
             gameState = GameState.MY_TURN;
             updateStatus("Spiel gestartet! Du bist am Zug.");
         } else {
-            myTurn = false;
             gameState = GameState.ENEMY_TURN;
             updateStatus("Spiel gestartet! " + opponentName + " beginnt.");
         }
@@ -479,7 +476,6 @@ public class GameController {
             updateStatsDisplay();
             restartButton.setDisable(false);
         } else {
-            myTurn = true;
             gameState = GameState.MY_TURN;
             updateStatus("Du bist am Zug!");
         }
