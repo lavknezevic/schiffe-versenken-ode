@@ -59,7 +59,7 @@ public class GameController {
         enemyView = new CellState[Board.SIZE][Board.SIZE];
         myGridButtons = new Button[Board.SIZE][Board.SIZE];
         enemyGridButtons = new Button[Board.SIZE][Board.SIZE];
-        config = new ConfigLoader();
+        config = ConfigLoader.getInstance();
         stats = new GameStats();
         gameState = GameState.START;
         playerName = config.getPlayerName();

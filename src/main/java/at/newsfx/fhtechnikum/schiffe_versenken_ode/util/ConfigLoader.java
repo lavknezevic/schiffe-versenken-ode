@@ -14,16 +14,32 @@ public class ConfigLoader {
 
     private static final Logger LOGGER = Logger.getLogger(ConfigLoader.class.getName());
 
+    private static ConfigLoader instance;
+
     private final Properties properties;
 
-    public ConfigLoader() {
+    private ConfigLoader() {
         properties = new Properties();
         load();
     }
 
-    public ConfigLoader(String filePath) {
+    private ConfigLoader(String filePath) {
         properties = new Properties();
         load(filePath);
+    }
+
+    public static ConfigLoader getInstance() {
+        if (instance == null) {
+            instance = new ConfigLoader();
+        }
+        return instance;
+    }
+
+    public static ConfigLoader getInstance(String filePath) {
+        if (instance == null) {
+            instance = new ConfigLoader(filePath);
+        }
+        return instance;
     }
 
     private void load() {
