@@ -421,6 +421,9 @@ public class GameController {
         } else if (message.equals("GAMEOVER:LOSE")) {
             gameState = GameState.GAME_OVER;
             stats.recordWin(playerName);
+            if (opponentName != null) {
+                stats.recordLoss(opponentName);
+            }
             updateStatus("Du hast gewonnen!");
             log("Alle gegnerischen Schiffe versenkt! Sieg!");
             updateStatsDisplay();
@@ -471,6 +474,9 @@ public class GameController {
             gameState = GameState.GAME_OVER;
             sendMessage("GAMEOVER:LOSE");
             stats.recordLoss(playerName);
+            if (opponentName != null) {
+                stats.recordWin(opponentName);
+            }
             updateStatus("Alle Schiffe versenkt. Du hast verloren!");
             log("Alle deine Schiffe wurden versenkt. Niederlage!");
             updateStatsDisplay();
@@ -578,7 +584,7 @@ public class GameController {
     }
 
     private void updateStatsDisplay() {
-        statsLabel.setText(stats.getStatsDisplay(playerName));
+        statsLabel.setText(stats.getAllStatsDisplay());
     }
 
     private void log(String message) {

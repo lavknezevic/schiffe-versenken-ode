@@ -55,6 +55,24 @@ public class GameStats {
         return playerName + " - W: " + w + " | L: " + l + " | D: " + d;
     }
 
+    public String getAllStatsDisplay() {
+        if (playerStats.isEmpty()) {
+            return "Keine Statistiken vorhanden.";
+        }
+        StringBuilder sb = new StringBuilder("Statistiken: ");
+        boolean first = true;
+        for (Map.Entry<String, int[]> entry : playerStats.entrySet()) {
+            if (!first) {
+                sb.append("  |  ");
+            }
+            int[] s = entry.getValue();
+            sb.append(entry.getKey()).append(" W:").append(s[0])
+              .append(" L:").append(s[1]).append(" D:").append(s[2]);
+            first = false;
+        }
+        return sb.toString();
+    }
+
     private int[] getOrCreate(String playerName) {
         return playerStats.computeIfAbsent(playerName, k -> new int[]{0, 0, 0});
     }
