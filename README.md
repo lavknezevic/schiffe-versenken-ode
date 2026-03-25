@@ -74,6 +74,10 @@ src/main/java/at/newsfx/fhtechnikum/schiffe_versenken_ode/
 ├── GameApplication.java     - JavaFX Application
 ├── GameController.java      - Spielsteuerung und GUI
 ├── Launcher.java            - Einstiegspunkt
+├── exception/
+│   ├── ConnectionException.java      - Verbindungsfehler
+│   ├── InvalidMessageException.java  - Ungueltige Netzwerknachricht
+│   └── InvalidPlacementException.java - Ungueltige Schiffplatzierung
 ├── model/
 │   ├── Board.java           - Spielfeld (10x10)
 │   ├── CellState.java       - Zellzustaende
@@ -90,5 +94,5 @@ src/main/java/at/newsfx/fhtechnikum/schiffe_versenken_ode/
 │   ├── GameServer.java      - TCP Server
 │   └── GameClient.java      - TCP Client
 └── util/
-    └── ConfigLoader.java    - Konfiguration aus Properties
+    └── ConfigLoader.java    - Konfiguration aus Properties (Singleton)
 ```
